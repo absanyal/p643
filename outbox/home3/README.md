@@ -1,0 +1,3 @@
+Hermite polynomials are a common special function in physics and appear as part of the solution for quantum harmonic oscillator states, in the form of Hermite Gauss polynomials. The polynomials are orthonormal and form a complete basis.
+
+The file plots the Hermite function and its derivative as as function of x, for n=0 to 10. The range of plotting can be changed in 'run.sh'. Correspondingly, there 11 pllot files that each plot Hn(x) and H'n(x), for each n, as well as one file which compares all Hn(x).
