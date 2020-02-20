@@ -1,6 +1,6 @@
 *
 !src
-!examples/*
+!examples
 !.gitignore
 !*.cpp
 !*.hpp
