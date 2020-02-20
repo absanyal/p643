@@ -18,11 +18,12 @@ CPPFLAGS += -Isrc
 CPPFLAGS += -O3 #### Reduce compilation time and make debugging produce the expected results.
 STRIP_COMMAND = true #### Keeps lines in the executable for debugging
 
+all: $(EXENAME)
+
 $(EXENAME): clean main.o
     module load openmpi/2.1.1
     $(CXX) $(CPPFLAGS) -o $(EXENAME)  main.cpp
 
-all: $(EXENAME)
 
 submit:
     qsub submit.pbs
