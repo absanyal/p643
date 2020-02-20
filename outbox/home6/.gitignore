@@ -1,10 +1,10 @@
 *
+*.json
 !src
-!examples
 !.gitignore
 !*.cpp
 !*.hpp
 !*.h
 !*.pbs
-!MakeFile
+!MakeFile*
 !*.sh
