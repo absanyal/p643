@@ -1,3 +1,10 @@
 *
+!src
+!examples/*
 !.gitignore
 !*.cpp
+!*.hpp
+!*.h
+!*.pbs
+!MakeFile
+!*.sh
