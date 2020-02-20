@@ -19,17 +19,17 @@ CPPFLAGS += -O3 #### Reduce compilation time and make debugging produce the expe
 STRIP_COMMAND = true #### Keeps lines in the executable for debugging
 
 $(EXENAME): clean main.o
-        module load openmpi/2.1.1
-        $(CXX) $(CPPFLAGS) -o $(EXENAME)  main.cpp
+    module load openmpi/2.1.1
+    $(CXX) $(CPPFLAGS) -o $(EXENAME)  main.cpp
 
 all: $(EXENAME)
 
 submit:
-        qsub submit.pbs
+    qsub submit.pbs
 
 
 clean:
-      	rm -f $(EXENAME) *.o
-        rm -f *~ *.o* *.e*
+	rm -f $(EXENAME) *.o
+    rm -f *~ *.o* *.e*
 
 ######## End of Makefile ########
