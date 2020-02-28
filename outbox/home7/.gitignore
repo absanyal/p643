@@ -1,0 +1,9 @@
+*
+!src/
+!.gitignore
+!*.cpp
+!*.hpp
+!Makefile
+!run.sh
+!README.md
+!*.p
