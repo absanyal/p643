@@ -1,4 +1,4 @@
-g++ -o poisson main.cpp
+make
 rm *.pdf
 rm *.data
 ./poisson
