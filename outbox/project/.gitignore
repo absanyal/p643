@@ -5,5 +5,5 @@
 !*.h
 !*.hpp
 !*.inp
-!MakeFile
+!Makefile
 !*.p
