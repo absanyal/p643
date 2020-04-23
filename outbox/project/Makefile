@@ -6,8 +6,8 @@ CPPFLAGS += -Isrc
 STRIP_COMMAND = true
 LDFLAGS  = -llapack -llapacke
 
-$(EXENAME): clean sftriangle.o 
-	$(CXX) $(CPPFLAGS) -o $(EXENAME)  sftriangle.o $(LDFLAGS) 
+$(EXENAME): clean main.o 
+	$(CXX) $(CPPFLAGS) -o $(EXENAME)  main.o $(LDFLAGS) 
 	$(STRIP_COMMAND) $(EXENAME)
 
 all: $(EXENAME)

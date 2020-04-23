@@ -7,6 +7,7 @@
 #include "diag.h"
 #include "parameters.h"
 #include "rngesus.hpp"
+#include<iomanip>
 
 using namespace std;
 
@@ -124,7 +125,7 @@ double perturb()
 
 double lnP(int i)
 {
-    double sum = 1.0;
+    double sum = 0.0;
     double mu = getmu();
     for (int lambda = 0; lambda < eigs_.size(); lambda++)
     {
@@ -167,42 +168,50 @@ int main(int argc, char *argv[])
     }
     cout << "Populated random theta array." << endl;
     // makeHund();
-    cout << "Added interaction terms to hamiltonian." << endl;
+    // cout << "Added interaction terms to hamiltonian." << endl;
 
     // for (int i = 0; i < 100; i++){
     //     cout << perturb() << endl;
     // }
 
-    for (int t = 0; t < 100; t++)
+    for (int t = 0; t < prm.sweeps; t++)
     {
+        cout << "Sweep number: " << t + 1 << endl;
         for (int i = 0; i < prm.Lx; i++)
         {
             for (int j = 0; j < prm.Ly; j++)
             {
-                cout << "Sweep: " << t + 1
-                     << " (" << i + 1 << ", " << j + 1 << ")\n";
+                // cout << "Sweep: " << t + 1
+                //      << " (" << i + 1 << ", " << j + 1 << ")\n";
                 double theta_old, theta_new, P_old, P_new, P_ratio, r;
                 int pos;
                 pos = k(i, j);
+
                 theta_old = real(theta(0, pos));
                 makeHund();
                 Diagonalize('V', H, eigs_);
+                // cout << getmu() << " ";
                 P_old = lnP(pos);
-                theta_new = theta_old + perturb();
+
+                theta_new = filter(theta_old + perturb());
                 theta(0, pos) = theta_new;
                 makeHund();
                 Diagonalize('V', H, eigs_);
+                // cout << getmu() << "\n";
                 P_new = lnP(pos);
+
                 r = rng.random();
                 P_ratio = exp(P_old - P_new);
+                // cout << r << " " << P_old << " " << P_new << " "
+                // << exp(P_old) << " " << exp(P_new) << endl;
                 if (r < P_ratio)
                 {
                     accepted += 1;
-                    cout << "Accepted" << endl;
+                    // cout << "Accepted" << endl;
                 }
                 else
                 {
-                    cout << "Rejected" << endl;
+                    // cout << "Rejected" << endl;
                     theta(0, pos) = theta_old;
                 }
                 total_change += 1;
@@ -212,6 +221,17 @@ int main(int argc, char *argv[])
     cout << "Acceptance ratio = "
          << (accepted * 1.0) / (total_change * 1.0) << endl;
 
+    for (int i = 0; i < prm.Lx; i++)
+    {
+        for (int j = 0; j < prm.Ly; j++)
+        {
+            double pos;
+            pos = k(i,j);
+            cout << fixed << setprecision(3) << setfill('0');
+            cout << real(theta(0, pos))/ (2.0 * M_PI) - 0.5 << "\t";
+        }
+        cout << endl;
+    }
     return 0;
 }
 

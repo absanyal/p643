@@ -9,11 +9,12 @@ typedef std::complex<double> cd;
 
 class parameters
 {
-// private:
-//     /* data */
+    // private:
+    //     /* data */
 public:
     int Lx, Ly, numw, Mx, My, nx, ny;
-    double minw, maxw, JH, JH_d, G, tx, ty, td, d_theta_x, d_theta_y, d_phi_x, d_phi_y,T,window;
+    double minw, maxw, JH, JH_d, G, tx, ty,
+        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, window, sweeps;
     bool plot_up_down_separately;
 
     double matchstring(string, string);
@@ -49,9 +50,10 @@ double parameters::matchstring(string file, string match)
     }
     if (pass == false)
     {
-        string errorout = match;
-        errorout += "= argument is missing in the input file!";
-        throw std::invalid_argument(errorout);
+        // string errorout = match;
+        // errorout += "= argument is missing in the input file!";
+        // throw std::invalid_argument(errorout);
+        cout << match << "= argument is missing in the input file!";
     }
     cout << match << " = " << amount << endl;
     return amount;
@@ -77,6 +79,7 @@ void parameters::load(string inputfile)
     plot_up_down_separately = matchstring(inputfile, "plot_up_down_separately");
     T = matchstring(inputfile, "temperature");
     window = matchstring(inputfile, "window");
+    sweeps = matchstring(inputfile, "sweeps");
 }
 
 #endif
