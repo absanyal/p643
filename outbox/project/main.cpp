@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
             double pos;
             pos = k(i,j);
             cout << fixed << setprecision(3) << setfill('0');
-            cout << real(theta(0, pos))/ (2.0 * M_PI) - 0.5 << "\t";
+            cout << real(theta(0, pos))/(2 * M_PI) << "\t";
         }
         cout << endl;
     }
