@@ -12,7 +12,7 @@ EXENAME  = sf
 ### MUST USE: module load gcc/4.8.2
 CXX = g++  ### Or use g++ (both works!)
 CPPFLAGS = -std=c++11
-LDFLAGS = -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -ldl -lpthread -lm -qopenmp -liomp5
+LDFLAGS = -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -ldl
 
 # LDFLAGS  = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core  -L$(INTELROOT)/lib/intel64 -lpthread
 # LDFLAGS  = -L$(MKLROOT)/lib/intel64  -lmkl_intel_thread -lmkl_core -lmkl_intel_lp64  -lm  -liomp5  -qopenmp -lpthread
