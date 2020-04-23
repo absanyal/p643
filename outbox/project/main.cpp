@@ -176,7 +176,9 @@ int main(int argc, char *argv[])
 
     for (int t = 0; t < prm.sweeps; t++)
     {
-        cout << "Sweep number: " << t + 1 << endl;
+        total_change = 0;
+        accepted = 0;
+        // cout << "Sweep number: " << t + 1 << endl;
         for (int i = 0; i < prm.Lx; i++)
         {
             for (int j = 0; j < prm.Ly; j++)
@@ -207,6 +209,7 @@ int main(int argc, char *argv[])
                 if (r < P_ratio)
                 {
                     accepted += 1;
+                    theta(0, pos) = theta_new;
                     // cout << "Accepted" << endl;
                 }
                 else
@@ -217,9 +220,9 @@ int main(int argc, char *argv[])
                 total_change += 1;
             }
         }
-    }
-    cout << "Acceptance ratio = "
+    cout << "Sweep number: " << t + 1<< ", Acceptance ratio = "
          << (accepted * 1.0) / (total_change * 1.0) << endl;
+    }
 
     for (int i = 0; i < prm.Lx; i++)
     {
