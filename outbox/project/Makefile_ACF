@@ -10,7 +10,7 @@ EXENAME  = sf
 
 ### ------ Newton compilation ------------
 ### MUST USE: module load gcc/4.8.2
-CXX = icc  ### Or use g++ (both works!)
+CXX = g++  ### Or use g++ (both works!)
 CPPFLAGS = -std=c++11
 LDFLAGS = -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -ldl -lpthread -lm -qopenmp -liomp5
 
