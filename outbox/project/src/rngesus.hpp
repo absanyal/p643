@@ -1,7 +1,7 @@
 #ifndef RNGESUS_HPP
 #define RNGESUS_HPP
 
-#include <stdint-gcc.h>
+// #include <stdint-gcc.h>
 #include <iostream>
 #include <cmath>
 
