@@ -1,5 +1,7 @@
 *
 !src
+!presentation
+!report
 !.gitignore
 !*.cpp
 !*.h
@@ -7,3 +9,6 @@
 !*.inp
 !Makefile*
 !*.p
+!*.tex
+!*.pdf
+!Readme*

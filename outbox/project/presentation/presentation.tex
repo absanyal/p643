@@ -1,0 +1,196 @@
+\documentclass[]{beamer}
+\usetheme{Madrid}
+%\setlength{\oddsidemargin}{0.25in}
+%\setlength{\evensidemargin}{0.15in}
+%\setlength{\topmargin}{0.3in}
+%\setlength{\textwidth}{6.0in}
+%\setlength{\textheight}{8.5in}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{graphics}
+%\usepackage{graphicx}
+\usepackage{lscape,graphicx}
+\usepackage{amsfonts}
+\usepackage{longtable}
+\usepackage{epsfig}
+\usepackage{float}
+\usepackage{rotating}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{inputenc}
+\usepackage{caption}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\usepackage{lipsum}
+\usepackage{geometry}
+%\usepackage{titlesec}
+\usepackage{lipsum}
+\usepackage{siunitx}
+
+%\geometry{top = 2cm, bottom = 2cm, left = 2 cm, right = 2cm}
+
+\newcommand{\I}{\mathrm{i}}
+\newcommand{\matmel}[3]{\left[ #1 \right]_{#2, #3}}
+\newcommand{\complete}[1]{\sum_{#1}\ketbra{#1}{#1}}
+\newcommand{\ahat}{\hat{a}}
+\newcommand{\Ahatd}{\hat{A}^{\dagger}_{}}
+\newcommand{\Ahat}{\hat{A}}
+\newcommand{\ahatd}{\hat{a}^{\dagger}}
+\newcommand{\uhat}{\hat{u}}
+\newcommand{\uhatd}{\hat{u}^{\dagger}_{}}
+\newcommand{\phat}{\hat{P}}
+\newcommand{\phatd}{\hat{P}^{\dagger}_{}}
+\newcommand{\nhat}{\hat{n}}
+\newcommand{\psib}{\tilde{\psi}}
+\newcommand{\ham}{\hat{H}}
+\newcommand{\slims}[2]{\sum\limits_{#1}^{#2}}
+\newcommand{\ilims}[2]{\int\limits_{#1}^{#2}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cM}{\mathcal{M}}
+
+%opening
+\title[]{Monte Carlo Simulation of Spin-fermion Model}
+\subtitle{\emph{Based on}\\
+Phase Separation in Electronic Models for Manganites\\
+S. Yunoki, J. Hu, A. L. Malvezzi,\\ A. Moreo, N. Furukawa, and
+E. Dagotto.\\
+\emph{Phys. Rev. Lett., 80:845–848, Jan 1998.}
+}
+\author[A B Sanyal]{Amit Bikram Sanyal}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+
+
+\begin{frame}{Modelling a crystal: Hubbard Model}
+\begin{itemize}
+	\item Let us consider a model of a rectangular lattice where the electrons can hop to nearest neighboring sites, and interact on the same site. This can be represented by
+	\begin{align}\label{eqn:tight-binding-hamil}
+	\ham = -t \left(\sum_{\sigma = \uparrow, \downarrow} \sum_{\expval{i,j}}^{} \hat{c}^{\dagger}_{i, \sigma} \hat{c}^{}_{j, \sigma} + \mathrm{h.c.} \right) + U \sum_{i=1}^{N}\hat{n}_{i,\uparrow} \hat{n}_{i,\downarrow}
+	\end{align}
+	\item This is known as the Hubbard Model.
+	\item It is intrinsically a many-body system due to the 4-fermionic interaction term $ \nhat_{i, \uparrow} \nhat_{i, \downarrow} $.
+	\item As a result, the Hilbert space grows as $ \order{N!} $: this is an obvious problem for computation.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Simplifying to a smaller Hilbert space}
+\begin{itemize}
+	\item There are several, almost equivalent ways of tacking this problem.
+	\item One of these methods is the Mean-field solution, where we assume that a single electron is moving in a a effective field created by the rest of the electrons.
+	\item We can show that interaction can be approximately decomposed into \emph{auxiliary fields}, which act as an effective classical spin sitting at each location that interacts with the itinerant electron.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Spin-fermion Model}
+\begin{itemize}
+	\item The Spin-fermion (SF) model was initially a phenomenological model.
+	\item We pretend that each site is actually occupied by a classical spin that can take any orientation, and at each site, a single fermionic interaction term appears that can simulate the effects of the electron-electron interaction.
+	\item For an $ L_x \cross L_y $ lattice, this only creates a much smaller Hilbert space of dimension $ 2 L_x L_y $, as opposed to $ \order{(L_x L_y)!} $ in the many-body case. The factor of $ 2 $ appears because of the two spin sectors of the problem.
+	\item Although phenomenological in nature, it was shown to be highly effective in capturing the effects of interaction in the system.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Spin-fermion Model}
+\begin{itemize}
+	\item Later on, it was discovered that there are actual materials in nature with multi-orbital crystals, such as cuprates and manganites, which realistically have a structure similar to the SF model!\cite{dagotto_2011}.
+	\item This further cemented the importance of this model as an investigative tool.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Spin-fermion Model}
+\begin{itemize}
+	\item The single-orbital SF Hamiltonian is given as
+	\begin{align}
+	\nonumber
+	\ham =& -t \slims{\expval{i,j},\sigma}{} \left( {\ahatd}_{i,\sigma} {\ahat}_{j,\sigma} + h.c. \right) - J_H \slims{i}{} \vec{s}_i \cdot \vec{S}_i + J_{AF} \slims{\expval{i,j}}{} \vec{S}_i \cdot \vec{S}_j\\
+	\nonumber
+	=& -t \slims{\expval{i,j},\sigma}{} \left( {\ahatd}_{i,\sigma} {\ahat}_{j,\sigma} + h.c. \right) - \frac{J_H}{2} \slims{i, \alpha, \beta}{} \ahatd_{i,\alpha} \vec{\sigma}_{\alpha, \beta} \ahat_{i, \beta}  \cdot \vec{S}_i \\
+	&+ J_{AF} \slims{\expval{i,j}}{} \vec{S}_i \cdot \vec{S}_j
+	\end{align}
+	\item For our problem, we will set $ J_{AF} = 0 $.
+	\item $ \abs{\vec{S}_i} = 1 \implies \vec{S}_i = \left[\sin(\theta_i) \cos(\phi_i), \sin(\theta_i) \sin(\phi_i), \cos(\theta_i) \right] $
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Writing the Hamiltonian matrix}
+\begin{itemize}
+	\item The Hamiltonian matrix can now be evaluated in the single particle basis, which gives the following non-zero elements of the tight-binding Hamiltonian as well as the Hund-interaction Hamiltonian.
+	\item For the Hund interaction Hamiltonian, we get the following non-zero terms:
+	\begin{subequations}
+	\begin{align}
+	H_{i,i} &= \frac{J_H}{2} \cos(\theta_i)\\
+	H_{i + L_x L_y,i + L_x L_y} &= -\frac{J_H}{2} \cos(\theta_i)\\
+	H_{i, i+ L_x L_y} &= \frac{J_H}{2} \sin(\theta_i) \exp(- \I \phi)
+	\end{align}
+	\end{subequations}
+\item $ H = H_{TB} + H_{Hund} $
+\item The eigenvalues therefore only depend on the set of $ \left \{ \theta_i, \phi_i \right \} $ at a given temperature and filling.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Finding the ground state via Metropolis algorithm}
+\begin{itemize}
+	\item For sake of simplicity, we fix the classical spins on plane, implying all $ \phi_i=0 $.
+	\item The algorithm is now as follows:
+	\begin{enumerate}
+		\item Start with a random set of $ \theta_i $
+		\item Start at site one, and calculate the energy of the system.
+		\item Change the value of $ \theta_i $ at that site, and diagonalize the Hamiltonian again to recalculate the energy of that configuration.
+		\item Calculate the probability of transition from the old state to the new one.
+		\item Roll a random number to probabilistically accept or reject this transition.
+		\item Move on to subsequent sites till last site.
+		\item Repeat entire process several times till energy values have settled.
+	\end{enumerate}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Calculation of probability}
+\begin{itemize}
+	\item We define a function
+	\begin{align}
+	\nonumber
+	P &= \tr(Z)\\
+	&= \prod\limits_{\lambda}\left[1 + \exp(-\beta \left( \epsilon_\lambda - \mu \right))\right]
+	\end{align}
+	\item We calculate $ P' $ after perturbing the angle at a given site. This changes $ P $ as changing the angle changes the Hamiltonian and hence, the spectrum.
+	\item Probability of this change being accepted is $ \frac{P}{P'} $.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Results}
+
+A phase diagram is taken from \cite{PhysRevLett.80.845}:
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.4\linewidth]{phase}
+		\caption{Phase diagram between $ J_H $ and $ \mu $}
+		\label{fig:phase}
+	\end{figure}
+	
+\end{frame}
+
+\begin{frame}{Results}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.85\linewidth]{spins}
+	\caption{Result from my simulation, at half-filling, very low temperature, at $ J_H = 1.0 $.}
+	\label{fig:spins}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}{References}
+\nocite{*}
+\bibliography{mybib}{}
+\bibliographystyle{acm}
+\end{frame}
+\end{document}

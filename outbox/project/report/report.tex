@@ -1,0 +1,302 @@
+\documentclass[]{article}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{graphics}
+%\usepackage{graphicx}
+\usepackage{lscape,graphicx}
+\usepackage{amsfonts}
+\usepackage{longtable}
+\usepackage{epsfig}
+\usepackage{float}
+\usepackage{rotating}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{inputenc}
+\usepackage{caption}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\usepackage{lipsum}
+\usepackage{geometry}
+%\usepackage{titlesec}
+\usepackage{lipsum}
+\usepackage{siunitx}
+\usepackage{listings}
+\geometry{top = 2cm, bottom = 2cm, left = 2 cm, right = 2cm}
+
+\newcommand{\I}{\mathrm{i}}
+\newcommand{\matmel}[3]{\left[ #1 \right]_{#2, #3}}
+\newcommand{\complete}[1]{\sum_{#1}\ketbra{#1}{#1}}
+\newcommand{\ahat}{\hat{a}}
+\newcommand{\Ahatd}{\hat{A}^{\dagger}_{}}
+\newcommand{\Ahat}{\hat{A}}
+\newcommand{\ahatd}{\hat{a}^{\dagger}}
+\newcommand{\uhat}{\hat{u}}
+\newcommand{\uhatd}{\hat{u}^{\dagger}_{}}
+\newcommand{\phat}{\hat{P}}
+\newcommand{\phatd}{\hat{P}^{\dagger}_{}}
+\newcommand{\nhat}{\hat{n}}
+\newcommand{\psib}{\tilde{\psi}}
+\newcommand{\ham}{\hat{H}}
+\newcommand{\slims}[2]{\sum\limits_{#1}^{#2}}
+\newcommand{\ilims}[2]{\int\limits_{#1}^{#2}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cM}{\mathcal{M}}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+
+% Title Page
+\title{Monte Carlo Simulation of Spin-fermion Model\\
+	\vspace{1cm}
+	{\large \emph{Based on}\\ \vspace{2mm}
+	Phase Separation in Electronic Models for Manganites\\
+	S. Yunoki, J. Hu, A. L. Malvezzi, A. Moreo, N. Furukawa, and
+	E. Dagotto.\\
+	\emph{Phys. Rev. Lett., 80:845–848, Jan 1998.}}
+}
+\author{Amit Bikram Sanyal}
+\date{\today}
+
+\lstset{ 
+	backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+	basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+	breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+	breaklines=true,                 % sets automatic line breaking
+	captionpos=b,                    % sets the caption-position to bottom
+	commentstyle=\color{mygreen},    % comment style
+	deletekeywords={...},            % if you want to delete keywords from the given language
+	%escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+	extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+	firstnumber=1,                % start line enumeration with line 1000
+	frame=single,	                   % adds a frame around the code
+	keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+	keywordstyle=\color{blue},       % keyword style
+	language=C++,                 % the language of the code
+	morekeywords={*,...},            % if you want to add more keywords to the set
+	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+	numbersep=5pt,                   % how far the line-numbers are from the code
+	numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+	rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+	showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+	showstringspaces=false,          % underline spaces within strings only
+	showtabs=false,                  % show tabs within strings adding particular underscores
+	stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+	stringstyle=\color{mymauve},     % string literal style
+	tabsize=2,	                   % sets default tabsize to 2 spaces
+	title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+
+\begin{document}
+\maketitle
+
+\section{Hubbard Model}
+In condensed matter, there are generally two ways to model a crystal. The first approach involves treating each atom as a potential and solving the Schr\"{o}dinger equation to find bound states, treating the electrons entirely as waves. A second approach is to consider that each atom is a "site" on the lattice, and the electrons are particles which hop from site to site, with it being localized entirely on a given site at a given moment of time. This is known as the tight-binding model, where we add the further simplification that electrons can only jump from a site to their nearest neighbors.
+
+At this point, it becomes relatively simple to add the effect of electron-electron interaction to the system. The interaction can be assumened to be short range, as in, two particles interact only when they sit on the same site. This is called the Hubbard model.
+\begin{align}\label{eqn:tight-binding-hamil}
+\ham = -t \left(\sum_{\sigma = \uparrow, \downarrow} \sum_{\expval{i,j}}^{} \hat{c}^{\dagger}_{i, \sigma} \hat{c}^{}_{j, \sigma} + \mathrm{h.c.} \right) + U \sum_{i=1}^{N}\hat{n}_{i,\uparrow} \hat{n}_{i,\downarrow}
+\end{align}
+The Hubbard model, despite its simplifications, is a highly effective model that predict magnetic effects in a crystal very accurately.
+
+However, the Hubbard inetraction term makes this an intrinsically many-body model and as a result, the Hilbert space of this system grows as $ \order{N!} $ if the lattice has $ N $ sites. This makes diagonalizing this problem computationally challenging. A solution is to decouple the interaction into an effective model where we can use a one-body Hilbert space of $ \order{N} $ instead. One of these methods is the Mean-field solution, where we assume that a single electron is moving in a a effective field created by the rest of the electrons. We can show that interaction can be approximately decomposed into \emph{auxiliary fields}, which act as an effective classical spin sitting at each location that interacts with the itinerant electron.
+
+\section{The Spin-fermion model}
+The Spin-fermion (SF) model was initially a phenomenological model inspired by the mean field solution. We pretend that each site is actually occupied by a classical spin that can take any orientation, and at each site, a single fermionic interaction term appears that can simulate the effects of the electron-electron interaction. For an $ L_x \cross L_y $ lattice, this only creates a much smaller Hilbert space of dimension $ 2 L_x L_y $, as opposed to $ \order{(L_x L_y)!} $ in the many-body case. The factor of $ 2 $ appears because of the two spin sectors of the problem. Although phenomenological in nature, it was shown to be highly effective in capturing the effects of interaction in the system.
+
+Later on, it was discovered that there are actual materials in nature with multi-orbital crystals, such as cuprates and manganites, which realistically have a structure similar to the SF model!\cite{dagotto_2011}. This further cemented the importance of this model as an investigative tool.
+
+The single-orbital SF Hamiltonian is given as
+\begin{align}
+\nonumber
+\ham =& -t \slims{\expval{i,j},\sigma}{} \left( {\ahatd}_{i,\sigma} {\ahat}_{j,\sigma} + h.c. \right) - J_H \slims{i}{} \vec{s}_i \cdot \vec{S}_i + J_{AF} \slims{\expval{i,j}}{} \vec{S}_i \cdot \vec{S}_j\\
+\nonumber
+=& -t \slims{\expval{i,j},\sigma}{} \left( {\ahatd}_{i,\sigma} {\ahat}_{j,\sigma} + h.c. \right) - \frac{J_H}{2} \slims{i, \alpha, \beta}{} \ahatd_{i,\alpha} \vec{\sigma}_{\alpha, \beta} \ahat_{i, \beta}  \cdot \vec{S}_i \\
+&+ J_{AF} \slims{\expval{i,j}}{} \vec{S}_i \cdot \vec{S}_j
+\end{align}
+For our problem, we will set $ J_{AF} = 0 $ and $ \abs{\vec{S}_i} = 1 \implies \vec{S}_i = \left[\sin(\theta_i) \cos(\phi_i), \sin(\theta_i) \sin(\phi_i), \cos(\theta_i) \right] $. For sake of simplicity, we fix the classical spins on plane, implying all $ \phi_i=0 $, which is known as the XY-model for the spins.
+
+The eigenvalues of the Hamiltonian can now be found by diagonalizing the Hamiltonian, which will depend on the actual orientation of the spins at a given temperature. In order to find the ground state, we need to determine this optimnal arrangement of spins, which will be done via the Monte Carlo Metropolis algorithm.
+
+\section{Computational modelling of the system}
+First, we need to model the tight-binding part of the Hamiltonian, which is done via the following function.
+
+\begin{lstlisting}
+void makeTB()
+{
+	H.resize(2 * prm.Lx * prm.Ly, 2 * prm.Lx * prm.Ly);
+	for (int i = 0; i < prm.Lx; i++)
+	{
+		for (int j = 0; j < prm.Ly; j++)
+		{
+			int pxy = k(i, j);
+			
+			int pxp1y = k((i + 1) % prm.Lx, j);
+			int pxm1y = k((i - 1 + prm.Lx) % prm.Lx, j);
+			
+			int pxyp1 = k(i, (j + 1) % prm.Ly);
+			int pxym1 = k(i, (j - 1 + prm.Ly) % prm.Ly);
+			
+			int pxp1ym1 = k((i + 1) % prm.Lx, (j - 1 + prm.Ly) % prm.Ly);
+			int pxm1yp1 = k((i - 1 + prm.Lx) % prm.Lx, (j + 1) % prm.Ly);
+			
+			H(pxp1y, pxy) = cd(prm.tx, 0.0);
+			H(pxm1y, pxy) = cd(prm.tx, 0.0);
+			
+			H(pxyp1, pxy) = cd(prm.ty, 0.0);
+			H(pxym1, pxy) = cd(prm.ty, 0.0);
+			
+			H(pxp1ym1, pxy) = cd(prm.td, 0.0);
+			H(pxm1yp1, pxy) = cd(prm.td, 0.0);
+			
+			H(pxp1y + ns, pxy + ns) = cd(prm.tx, 0.0);
+			H(pxm1y + ns, pxy + ns) = cd(prm.tx, 0.0);
+			
+			H(pxyp1 + ns, pxy + ns) = cd(prm.ty, 0.0);
+			H(pxym1 + ns, pxy + ns) = cd(prm.ty, 0.0);
+			
+			H(pxp1ym1 + ns, pxy + ns) = cd(prm.td, 0.0);
+			H(pxm1yp1 + ns, pxy + ns) = cd(prm.td, 0.0);
+		}
+	}
+}
+\end{lstlisting}
+This part of the Hamiltonian governs the non-interacting part of the problem and will remain constant throughout the computation.
+
+The Hunds interaction needs to be recalculated each time we change the configuration of the spins, and is done by calling the following routine:
+
+\begin{lstlisting}
+void makeHund()
+{
+	// Hund's terms
+	for (int i = 0; i < ns; i++)
+	{
+		H(i, i) = 0.5 * prm.JH * cos(theta(0, i));
+		H(i + ns, i + ns) = -0.5 * prm.JH * cos(theta(0, i));
+		H(i, i + ns) = 0.5 * prm.JH * sin(theta(0, i)) * exp(-imagi * phi(0, i));
+	}
+}
+\end{lstlisting}
+
+The algorithm is now as follows:
+	\begin{enumerate}
+	\item Start with a random set of $ \theta_i $ for each site.
+	\item Start at site one, and calculate the energy of the system via diagonalization.
+	\item Change the value of $ \theta_i $ at that site, and diagonalize the Hamiltonian again to recalculate the energy of that configuration.
+	\item Calculate the probability of transition from the old state to the new one.
+	\item Roll a random number to probabilistically accept or reject this transition.
+	\item Move on to subsequent sites till last site.
+	\item Repeat entire process several times till energy values have settled.
+\end{enumerate}
+
+To calculate the probabilty weight, we first define a function
+\begin{align}
+\nonumber
+P &= \tr(Z)\\
+&= \prod\limits_{\lambda}\left[1 + \exp(-\beta \left( \epsilon_\lambda - \mu \right))\right]
+\end{align}
+We calculate $ P' $ after perturbing the angle at a given site. This changes $ P $ as changing the angle changes the Hamiltonian and hence, the spectrum. Probability of this change being accepted is $ (P/P') $.
+
+There is a computational challenge in calculating $ P $. The product gets large very quickly and exceeds the floating point limit on a computer. Hence, I calculate $ \log(P) $, which makes the probability weight $ \exp(\log(P)-\log(P')) $ which is a smaller number. $ \log(P) $ is calculated by the following routine that gets called in the Monte Carlo loops:
+
+\begin{lstlisting}
+double lnP(int i)
+{
+	double sum = 0.0;
+	double mu = getmu();
+	for (int lambda = 0; lambda < eigs_.size(); lambda++)
+	{
+		sum += log((1.0 + exp(-(1 / (prm.T)) * (eigs_[lambda] - mu))));
+		// cout << sum << endl;
+	}
+	return sum;
+} 
+\end{lstlisting}
+\newpage
+The final Monte Carlo loop is as follows:
+\begin{lstlisting}
+for (int t = 0; t < prm.sweeps; t++)
+{
+	total_change = 0;
+	accepted = 0;
+	// cout << "Sweep number: " << t + 1 << endl;
+	for (int i = 0; i < prm.Lx; i++)
+	{
+		for (int j = 0; j < prm.Ly; j++)
+		{
+			// cout << "Sweep: " << t + 1
+			//      << " (" << i + 1 << ", " << j + 1 << ")\n";
+			double theta_old, theta_new, P_old, P_new, P_ratio, r;
+			int pos;
+			pos = k(i, j);
+			
+			theta_old = real(theta(0, pos));
+			makeHund();
+			Diagonalize('V', H, eigs_);
+			// cout << getmu() << " ";
+			P_old = lnP(pos);
+			
+			theta_new = filter(theta_old + perturb());
+			theta(0, pos) = theta_new;
+			makeHund();
+			Diagonalize('V', H, eigs_);
+			// cout << getmu() << "\n";
+			P_new = lnP(pos);
+			
+			r = rng.random();
+			P_ratio = exp(P_old - P_new);
+			// cout << r << " " << P_old << " " << P_new << " "
+			// << exp(P_old) << " " << exp(P_new) << endl;
+			if (r < P_ratio)
+			{
+				accepted += 1;
+				theta(0, pos) = theta_new;
+				// cout << "Accepted" << endl;
+			}
+			else
+			{
+				// cout << "Rejected" << endl;
+				theta(0, pos) = theta_old;
+			}
+			total_change += 1;
+		}
+	}
+	cout << "Sweep number: " << t + 1 << ", Acceptance ratio = "
+	<< (accepted * 1.0) / (total_change * 1.0) << endl;
+}
+\end{lstlisting}
+
+\newpage
+\section{Results}
+Although a large number of quantities can be calculated from this model, they chiefly rely on looking at the orientation of the spins, which tells the magnetic state of the system. By varying the number of particles and the strength of interaction, we can get a phase diagram.\cite{PhysRevLett.80.845}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\linewidth]{phase}
+	\caption{Phase diagram between $ J_H $ and $ \mu $}
+	\label{fig:phase}
+\end{figure}
+
+\newpage
+I ran my simulation at half-filling, very low temperature, at $ J_H = 1.0 $ on a $ 10 \cross 10 $ lattice and obtained the individual spins. Each spin is between $ 0 $ and $ 2 \pi $ and is divided by $ 2\pi $. Thus, a spin close to 1 or 0 points upwards and $ 0.5 $ means it points downwards.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.85\linewidth]{spins}
+	\caption{Result from my simulation, at half-filling, very low temperature, at $ J_H = 1.0 $.}
+	\label{fig:spins}
+\end{figure}
+
+I also ran my simulation at very high values of $ J_H $ but failed to obtain a fully thermalized ferromagnetic state, as this requires the system to be cooled from a higher temperature, but I could not find out the exact calculations necessary to compute the chemical potential at high temperatures.
+
+\newpage
+\nocite{*}
+\bibliography{mybib}{}
+\bibliographystyle{plain}
+\end{document}          
