@@ -7,7 +7,7 @@
 #include "diag.h"
 #include "parameters.h"
 #include "rngesus.hpp"
-#include<iomanip>
+#include <iomanip>
 
 using namespace std;
 
@@ -43,7 +43,7 @@ pair<int, int> kinv(int M)
 double getmu()
 {
     int mid = eigs_.size() / 2;
-    double mu = (eigs_[mid] + eigs_[mid + 1]) / (2.0);
+    double mu = (eigs_[mid-1] + eigs_[mid]) / (2.0);
     return mu;
 }
 
@@ -63,6 +63,17 @@ double filter(double x)
 double lorentzian(double x, double x0)
 {
     return (1 / M_PI) * 0.5 * prm.G / (pow(x - x0, 2) + pow(0.5 * prm.G, 2));
+}
+
+double getQuantumEnergy()
+{
+    double q_energy = 0;
+    double this_mu = getmu();
+    for (int i = 0; i < 2 * prm.Lx * prm.Ly; i++)
+    {
+        q_energy += eigs_[i] * 1.0 / (1.0 + exp((eigs_[i] - this_mu) * (1.0 / prm.T)));
+    }
+    return q_energy;
 }
 
 void makeTB()
@@ -108,6 +119,7 @@ void makeTB()
 void makeHund()
 {
     // Hund's terms
+    // cout << "JH=" << prm.JH << endl;
     for (int i = 0; i < ns; i++)
     {
         H(i, i) = 0.5 * prm.JH * cos(theta(0, i));
@@ -148,7 +160,7 @@ int main(int argc, char *argv[])
 
     theta.resize(1, ns);
     phi.resize(1, ns);
-    rng.set_seed(32515465623251);
+    rng.set_seed(1);
 
     // TB Part, construct just once
     makeTB();
@@ -190,20 +202,27 @@ int main(int argc, char *argv[])
                 pos = k(i, j);
 
                 theta_old = real(theta(0, pos));
+                makeTB();
                 makeHund();
+
+                // cout << "***************************" << endl;
+                // H.print();
+                // cout << "***************************" << endl;
+
                 Diagonalize('V', H, eigs_);
                 // cout << getmu() << " ";
                 P_old = lnP(pos);
 
                 theta_new = filter(theta_old + perturb());
                 theta(0, pos) = theta_new;
+                makeTB();
                 makeHund();
                 Diagonalize('V', H, eigs_);
                 // cout << getmu() << "\n";
                 P_new = lnP(pos);
 
                 r = rng.random();
-                P_ratio = exp(P_old - P_new);
+                P_ratio = exp(P_new - P_old);
                 // cout << r << " " << P_old << " " << P_new << " "
                 // << exp(P_old) << " " << exp(P_new) << endl;
                 if (r < P_ratio)
@@ -220,8 +239,9 @@ int main(int argc, char *argv[])
                 total_change += 1;
             }
         }
-    cout << "Sweep number: " << t + 1<< ", Acceptance ratio = "
-         << (accepted * 1.0) / (total_change * 1.0) << endl;
+        cout << "Sweep number: " << t + 1 << ", Acceptance ratio = "
+             << (accepted * 1.0) / (total_change * 1.0) << " "
+             << getQuantumEnergy() << " " << getmu() << endl;
     }
 
     for (int i = 0; i < prm.Lx; i++)
@@ -229,9 +249,9 @@ int main(int argc, char *argv[])
         for (int j = 0; j < prm.Ly; j++)
         {
             double pos;
-            pos = k(i,j);
+            pos = k(i, j);
             cout << fixed << setprecision(3) << setfill('0');
-            cout << real(theta(0, pos))/(2 * M_PI) << "\t";
+            cout << real(theta(0, pos)) / 3.1415926535 << "\t";
         }
         cout << endl;
     }
