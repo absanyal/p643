@@ -1,6 +1,6 @@
-Lx=4
-Ly=4
-JH=2.0
+Lx=6
+Ly=6
+JH=8.0
 JH_d=0.0
 tx=-1.0
 ty=-1.0
@@ -17,3 +17,4 @@ plot_up_down_separately=0
 temperature=0.01
 window=0.05
 sweeps=500
+filling=0.2

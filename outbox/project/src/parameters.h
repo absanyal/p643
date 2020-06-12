@@ -14,7 +14,7 @@ class parameters
 public:
     int Lx, Ly, numw, Mx, My, nx, ny;
     double minw, maxw, JH, JH_d, G, tx, ty,
-        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, window, sweeps;
+        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, window, sweeps, filling;
     bool plot_up_down_separately;
 
     double matchstring(string, string);
@@ -80,6 +80,7 @@ void parameters::load(string inputfile)
     T = matchstring(inputfile, "temperature");
     window = matchstring(inputfile, "window");
     sweeps = matchstring(inputfile, "sweeps");
+    filling = matchstring(inputfile, "filling");
 }
 
 #endif

@@ -42,8 +42,11 @@ pair<int, int> kinv(int M)
 
 double getmu()
 {
-    int mid = eigs_.size() / 2;
-    double mu = (eigs_[mid-1] + eigs_[mid]) / (2.0);
+    // int mid = eigs_.size() / 2;
+    // double mu = (eigs_[mid-1] + eigs_[mid]) / (2.0);
+    int req_state;
+    req_state = int(prm.filling * 2.0 * prm.Lx * prm.Ly);
+    double mu = (eigs_[req_state-1] + eigs_[req_state]) / (2.0);
     return mu;
 }
 
@@ -240,8 +243,8 @@ int main(int argc, char *argv[])
             }
         }
         cout << "Sweep number: " << t + 1 << ", Acceptance ratio = "
-             << (accepted * 1.0) / (total_change * 1.0) << " "
-             << getQuantumEnergy() << " " << getmu() << endl;
+             << (accepted * 1.0) / (total_change * 1.0) << ", "
+             << getQuantumEnergy() << ", " << getmu() << endl;
     }
 
     for (int i = 0; i < prm.Lx; i++)
@@ -251,7 +254,7 @@ int main(int argc, char *argv[])
             double pos;
             pos = k(i, j);
             cout << fixed << setprecision(3) << setfill('0');
-            cout << real(theta(0, pos)) / 3.1415926535 << "\t";
+            cout << real(theta(0, pos)) / (1.0 * 3.1415926535) << "\t";
         }
         cout << endl;
     }
