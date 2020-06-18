@@ -12,9 +12,10 @@ class parameters
     // private:
     //     /* data */
 public:
-    int Lx, Ly, numw, Mx, My, nx, ny;
+    int Lx, Ly, numw, Mx, My, nx, ny, seed;
     double minw, maxw, JH, JH_d, G, tx, ty,
-        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, window, sweeps, filling;
+        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, 
+        window, sweeps, filling;
     bool plot_up_down_separately;
 
     double matchstring(string, string);
@@ -61,6 +62,7 @@ double parameters::matchstring(string file, string match)
 
 void parameters::load(string inputfile)
 {
+    seed = matchstring(inputfile, "seed");
     Lx = matchstring(inputfile, "Lx");
     Ly = matchstring(inputfile, "Ly");
     JH = matchstring(inputfile, "JH");

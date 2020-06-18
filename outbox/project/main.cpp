@@ -14,7 +14,6 @@ using namespace std;
 parameters prm;
 xorshift64 rng;
 
-int k(int x, int y) { return x + prm.Lx * y; }
 pair<int, int> kinv(int);
 double lorentzian(double, double);
 // cd phasex(int), phasey(int);
@@ -23,6 +22,8 @@ const double kB = 1.38 * pow(10, -23);
 cd imagi = cd(0, 1);
 
 double mu;
+double global_present_mu;
+double temperature;
 
 Matrix<cd> H;
 Matrix<cd> theta;
@@ -40,14 +41,62 @@ pair<int, int> kinv(int M)
     return std::make_pair(x, y);
 }
 
+int k(int x, int y)
+{
+    return x + prm.Lx * y;
+}
+
+// double getmu()
+// {
+//     int req_state;
+//     req_state = int(prm.filling * 2.0 * prm.Lx * prm.Ly);
+//     double mu = (eigs_[req_state - 1] + eigs_[req_state]) / (2.0);
+//     return mu;
+// }
+
 double getmu()
 {
-    // int mid = eigs_.size() / 2;
-    // double mu = (eigs_[mid-1] + eigs_[mid]) / (2.0);
-    int req_state;
-    req_state = int(prm.filling * 2.0 * prm.Lx * prm.Ly);
-    double mu = (eigs_[req_state-1] + eigs_[req_state]) / (2.0);
-    return mu;
+    double target_N, n1;
+    double mu1, mu2, mutemp, muout;
+    bool converged;
+    int nstates = int(2.0 * prm.Lx * prm.Ly);
+    target_N = prm.filling * 2.0 * prm.Lx * prm.Ly;
+    mu1 = eigs_[0];
+    mu2 = eigs_[nstates - 1];
+    mutemp = (eigs_[0] + eigs_[nstates - 1]) / 2.0;
+    // mutemp = global_present_mu;
+    for (int i = 0; i < 40000; i++)
+    {
+        n1 = 0.0;
+        for (int j = 0; j < nstates; j++)
+        {
+            n1 += double(1.0 / (exp((eigs_[j] - mutemp) * (1.0 / temperature)) + 1.0));
+        }
+        if (abs(target_N - n1) < double(0.00001))
+        {
+            converged = true;
+            break;
+        }
+        else
+        {
+            if (n1 < target_N)
+            {
+                mu1 = mutemp;
+                mutemp = 0.5 * (mutemp + mu2);
+            }
+            else
+            {
+                mu2 = mutemp;
+                mutemp = 0.5 * (mutemp + mu1);
+            }
+        }
+    }
+    if (!converged)
+    {
+        cout << "mu not converged, stopping at N= " << n1 << endl;
+    }
+    global_present_mu = mutemp;
+    return mutemp;
 }
 
 double filter(double x)
@@ -74,7 +123,8 @@ double getQuantumEnergy()
     double this_mu = getmu();
     for (int i = 0; i < 2 * prm.Lx * prm.Ly; i++)
     {
-        q_energy += eigs_[i] * 1.0 / (1.0 + exp((eigs_[i] - this_mu) * (1.0 / prm.T)));
+        q_energy +=
+            eigs_[i] * 1.0 / (1.0 + exp((eigs_[i] - this_mu) * (1.0 / temperature)));
     }
     return q_energy;
 }
@@ -144,7 +194,7 @@ double lnP(int i)
     double mu = getmu();
     for (int lambda = 0; lambda < eigs_.size(); lambda++)
     {
-        sum += log((1.0 + exp(-(1 / (prm.T)) * (eigs_[lambda] - mu))));
+        sum += log((1.0 + exp(-(1 / (temperature)) * (eigs_[lambda] - mu))));
         // cout << sum << endl;
     }
     return sum;
@@ -163,9 +213,9 @@ int main(int argc, char *argv[])
 
     theta.resize(1, ns);
     phi.resize(1, ns);
-    rng.set_seed(1);
+    rng.set_seed(prm.seed);
 
-    // TB Part, construct just once
+    // TB Part
     makeTB();
 
     cout << "Populated TB matrix." << endl;
@@ -189,62 +239,78 @@ int main(int argc, char *argv[])
     //     cout << perturb() << endl;
     // }
 
-    for (int t = 0; t < prm.sweeps; t++)
+    temperature = prm.T;
+    while (temperature > 0.01)
     {
-        total_change = 0;
-        accepted = 0;
-        // cout << "Sweep number: " << t + 1 << endl;
-        for (int i = 0; i < prm.Lx; i++)
+        for (int t = 0; t < prm.sweeps; t++)
         {
-            for (int j = 0; j < prm.Ly; j++)
+            total_change = 0;
+            accepted = 0;
+            // cout << "Sweep number: " << t + 1 << endl;
+            for (int i = 0; i < prm.Lx; i++)
             {
-                // cout << "Sweep: " << t + 1
-                //      << " (" << i + 1 << ", " << j + 1 << ")\n";
-                double theta_old, theta_new, P_old, P_new, P_ratio, r;
-                int pos;
-                pos = k(i, j);
-
-                theta_old = real(theta(0, pos));
-                makeTB();
-                makeHund();
-
-                // cout << "***************************" << endl;
-                // H.print();
-                // cout << "***************************" << endl;
-
-                Diagonalize('V', H, eigs_);
-                // cout << getmu() << " ";
-                P_old = lnP(pos);
-
-                theta_new = filter(theta_old + perturb());
-                theta(0, pos) = theta_new;
-                makeTB();
-                makeHund();
-                Diagonalize('V', H, eigs_);
-                // cout << getmu() << "\n";
-                P_new = lnP(pos);
-
-                r = rng.random();
-                P_ratio = exp(P_new - P_old);
-                // cout << r << " " << P_old << " " << P_new << " "
-                // << exp(P_old) << " " << exp(P_new) << endl;
-                if (r < P_ratio)
+                for (int j = 0; j < prm.Ly; j++)
                 {
-                    accepted += 1;
+                    // cout << "Sweep: " << t + 1
+                    //      << " (" << i + 1 << ", " << j + 1 << ")\n";
+                    double theta_old, theta_new, P_old, P_new, P_ratio, r;
+                    int pos;
+                    pos = k(i, j);
+
+                    theta_old = real(theta(0, pos));
+                    makeTB();
+                    makeHund();
+
+                    // cout << "***************************" << endl;
+                    // H.print();
+                    // cout << "***************************" << endl;
+
+                    Diagonalize('V', H, eigs_);
+                    // cout << getmu() << " ";
+                    P_old = lnP(pos);
+
+                    theta_new = filter(theta_old + perturb());
                     theta(0, pos) = theta_new;
-                    // cout << "Accepted" << endl;
+                    makeTB();
+                    makeHund();
+                    Diagonalize('V', H, eigs_);
+                    // cout << getmu() << "\n";
+                    P_new = lnP(pos);
+
+                    r = rng.random();
+                    P_ratio = exp(P_new - P_old);
+                    // cout << r << " " << P_old << " " << P_new << " "
+                    // << exp(P_old) << " " << exp(P_new) << endl;
+                    if (r < P_ratio)
+                    {
+                        accepted += 1;
+                        theta(0, pos) = theta_new;
+                        // cout << "Accepted" << endl;
+                    }
+                    else
+                    {
+                        // cout << "Rejected" << endl;
+                        theta(0, pos) = theta_old;
+                    }
+                    total_change += 1;
                 }
-                else
-                {
-                    // cout << "Rejected" << endl;
-                    theta(0, pos) = theta_old;
-                }
-                total_change += 1;
             }
+            cout << "T: " << temperature << ", SN: " << t + 1 << ", AR: "
+                 << (accepted * 1.0) / (total_change * 1.0) << ", En: "
+                 << getQuantumEnergy() << ", mu: " << getmu() << endl;
         }
-        cout << "Sweep number: " << t + 1 << ", Acceptance ratio = "
-             << (accepted * 1.0) / (total_change * 1.0) << ", "
-             << getQuantumEnergy() << ", " << getmu() << endl;
+        if (temperature > 2.0)
+        {
+            temperature -= 0.5;
+        }
+        if (temperature > 0.5 && temperature <= 2.0)
+        {
+            temperature -= 0.1;
+        }
+        if (temperature > 0.01 && temperature <= 0.5)
+        {
+            temperature -= 0.01;
+        }
     }
 
     for (int i = 0; i < prm.Lx; i++)
@@ -254,7 +320,7 @@ int main(int argc, char *argv[])
             double pos;
             pos = k(i, j);
             cout << fixed << setprecision(3) << setfill('0');
-            cout << real(theta(0, pos)) / (1.0 * 3.1415926535) << "\t";
+            cout << real(theta(0, pos)) / (2.0 * 3.1415926535) << "\t";
         }
         cout << endl;
     }
