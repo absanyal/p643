@@ -239,9 +239,14 @@ int main(int argc, char *argv[])
     //     cout << perturb() << endl;
     // }
 
+    ofstream tvsE;
+    tvsE.open("data/T_vs_E.txt");
+
     temperature = prm.T;
+    double totalQE;
     while (temperature > 0.01)
     {
+        totalQE = 0;
         for (int t = 0; t < prm.sweeps; t++)
         {
             total_change = 0;
@@ -295,10 +300,13 @@ int main(int argc, char *argv[])
                     total_change += 1;
                 }
             }
+            double presentQE = getQuantumEnergy();
+            totalQE += presentQE;
             cout << "T: " << temperature << ", SN: " << t + 1 << ", AR: "
                  << (accepted * 1.0) / (total_change * 1.0) << ", En: "
-                 << getQuantumEnergy() << ", mu: " << getmu() << endl;
+                 << presentQE << ", mu: " << getmu() << endl;
         }
+        tvsE << temperature << "\t" << totalQE / (1.0 * prm.sweeps) << endl;
         if (temperature > 2.0)
         {
             temperature -= 0.5;
@@ -324,6 +332,7 @@ int main(int argc, char *argv[])
         }
         cout << endl;
     }
+    tvsE.close();
     return 0;
 }
 
