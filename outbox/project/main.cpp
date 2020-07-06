@@ -29,6 +29,7 @@ Matrix<cd> H;
 Matrix<cd> theta;
 Matrix<cd> phi;
 vector<double> eigs_;
+Matrix<cd> SiSj;
 
 int ns;
 int accepted = 0;
@@ -177,7 +178,8 @@ void makeHund()
     {
         H(i, i) = 0.5 * prm.JH * cos(theta(0, i));
         H(i + ns, i + ns) = -0.5 * prm.JH * cos(theta(0, i));
-        H(i, i + ns) = 0.5 * prm.JH * sin(theta(0, i)) * exp(-imagi * phi(0, i));
+        H(i, i + ns) =
+            0.5 * prm.JH * sin(theta(0, i)) * exp(-imagi * phi(0, i));
     }
 }
 
@@ -321,6 +323,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    // Printing the final angles
+    cout << ":::::::::::Angles:::::::::::::" << endl;
     for (int i = 0; i < prm.Lx; i++)
     {
         for (int j = 0; j < prm.Ly; j++)
@@ -333,6 +337,63 @@ int main(int argc, char *argv[])
         cout << endl;
     }
     tvsE.close();
+
+    // Si.Sj calculation
+    SiSj.resize(ns, ns);
+    double theta1, theta2;
+    for (int i = 0; i < ns; i++)
+    {
+        // cout << "(" << kinv(i).first << ", " << kinv(i).second << ")" <<endl;
+        for (int j = 0; j < ns; j++)
+        {
+            theta1 = real(theta(0, i));
+            theta2 = real(theta(0, j));
+            SiSj(i, j) = cos(theta1 - theta2);
+            // cout << real(SiSj(i, j)) << "\t";
+        }
+        // cout << endl;
+    }
+
+    Matrix<cd> Sq;
+    Sq.resize(prm.Lx, prm.Ly);
+
+    cout << ":::::::::::S(q):::::::::::" << endl;
+
+    double qx, qy, ix, iy, jx, jy;
+
+    ofstream sqplot;
+    sqplot.open("data/Sq.txt");
+
+    for (int qnx = 0; qnx < prm.Lx; qnx++)
+    {
+        for (int qny = 0; qny < prm.Ly; qny++)
+        {
+            for (int i = 0; i < ns; i++)
+            {
+                for (int j = 0; j < ns; j++)
+                {
+                    qx = 2.0 * 3.1415926535 * qnx / double(prm.Lx);
+                    qy = 2.0 * 3.1415926535 * qny / double(prm.Ly);
+                    ix = kinv(i).first;
+                    iy = kinv(i).second;
+                    jx = kinv(j).first;
+                    jy = kinv(j).second;
+                    // cout << ix << " " << iy << " " << jx << " " << jy << endl;
+                    Sq(qnx, qny) +=
+                        (1.0 / double(ns)) *
+                        exp(imagi * qx * (ix - jx)) *
+                        exp(imagi * qy * (iy - jy)) * SiSj(i, j);
+                }
+            }
+            cout << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
+                 << "\t" << imag(Sq(qnx, qny)) << endl;
+            sqplot << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
+                   << "\t" << imag(Sq(qnx, qny)) << endl;
+        }
+        cout << endl;
+        sqplot << endl;
+    }
+    sqplot.close();
     return 0;
 }
 
