@@ -378,15 +378,16 @@ int main(int argc, char *argv[])
                     iy = kinv(i).second;
                     jx = kinv(j).first;
                     jy = kinv(j).second;
-                    // cout << ix << " " << iy << " " << jx << " " << jy << endl;
+                    // cout << ix << " "
+                    //      << iy << " " << jx << " " << jy << endl;
                     Sq(qnx, qny) +=
                         (1.0 / double(ns)) *
                         exp(imagi * qx * (ix - jx)) *
                         exp(imagi * qy * (iy - jy)) * SiSj(i, j);
                 }
             }
-            cout << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
-                 << "\t" << imag(Sq(qnx, qny)) << endl;
+            // cout << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
+            //      << "\t" << imag(Sq(qnx, qny)) << endl;
             sqplot << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
                    << "\t" << imag(Sq(qnx, qny)) << endl;
         }
