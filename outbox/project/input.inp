@@ -18,4 +18,4 @@ plot_up_down_separately=0
 temperature=0.1
 window=0.05
 sweeps=100
-filling=0.5
+filling=0.2
