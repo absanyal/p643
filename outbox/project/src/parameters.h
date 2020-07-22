@@ -12,10 +12,10 @@ class parameters
     // private:
     //     /* data */
 public:
-    int Lx, Ly, numw, Mx, My, nx, ny, seed;
+    int Lx, Ly, numw, Mx, My, nx, ny, seed, TCA, c_Lx, c_Ly;
     double minw, maxw, JH, JH_d, G, tx, ty,
-        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, 
-        window, sweeps, filling;
+        td, d_theta_x, d_theta_y, d_phi_x, d_phi_y, T, T_stop, 
+        window, sweeps, filling, measure_after, measure_every;
     bool plot_up_down_separately;
 
     double matchstring(string, string);
@@ -65,6 +65,9 @@ void parameters::load(string inputfile)
     seed = matchstring(inputfile, "seed");
     Lx = matchstring(inputfile, "Lx");
     Ly = matchstring(inputfile, "Ly");
+    TCA = matchstring(inputfile, "TCA");
+    c_Lx = matchstring(inputfile, "Lx");
+    c_Ly = matchstring(inputfile, "Ly");
     JH = matchstring(inputfile, "JH");
     JH_d = matchstring(inputfile, "JH_d");
     tx = matchstring(inputfile, "tx");
@@ -79,9 +82,12 @@ void parameters::load(string inputfile)
     maxw = matchstring(inputfile, "maxw");
     G = matchstring(inputfile, "G");
     plot_up_down_separately = matchstring(inputfile, "plot_up_down_separately");
-    T = matchstring(inputfile, "temperature");
+    T = matchstring(inputfile, "temperature_start");
+    T_stop = matchstring(inputfile, "temperature_stop");
     window = matchstring(inputfile, "window");
     sweeps = matchstring(inputfile, "sweeps");
+    measure_after = matchstring(inputfile, "measure_after");
+    measure_every = matchstring(inputfile, "measure_every");
     filling = matchstring(inputfile, "filling");
 }
 

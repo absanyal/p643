@@ -24,12 +24,15 @@ cd imagi = cd(0, 1);
 double mu;
 double global_present_mu;
 double temperature;
+double measure_counter;
+double theta1, theta2;
 
 Matrix<cd> H;
 Matrix<cd> theta;
 Matrix<cd> phi;
 vector<double> eigs_;
 Matrix<cd> SiSj;
+Matrix<cd> Sq;
 
 int ns;
 int accepted = 0;
@@ -37,23 +40,15 @@ int total_change = 0;
 
 pair<int, int> kinv(int M)
 {
-    int x = (int)M / prm.Lx;
-    int y = M % prm.Lx;
+    int x = (int)M / prm.Ly;
+    int y = M % prm.Ly;
     return std::make_pair(x, y);
 }
 
 int k(int x, int y)
 {
-    return x + prm.Lx * y;
+    return y + prm.Ly * x;
 }
-
-// double getmu()
-// {
-//     int req_state;
-//     req_state = int(prm.filling * 2.0 * prm.Lx * prm.Ly);
-//     double mu = (eigs_[req_state - 1] + eigs_[req_state]) / (2.0);
-//     return mu;
-// }
 
 double getmu()
 {
@@ -71,7 +66,10 @@ double getmu()
         n1 = 0.0;
         for (int j = 0; j < nstates; j++)
         {
-            n1 += double(1.0 / (exp((eigs_[j] - mutemp) * (1.0 / temperature)) + 1.0));
+            n1 +=
+                double(1.0 / (exp((eigs_[j] - mutemp) *
+                                  (1.0 / temperature)) +
+                              1.0));
         }
         if (abs(target_N - n1) < double(0.00001))
         {
@@ -125,7 +123,8 @@ double getQuantumEnergy()
     for (int i = 0; i < 2 * prm.Lx * prm.Ly; i++)
     {
         q_energy +=
-            eigs_[i] * 1.0 / (1.0 + exp((eigs_[i] - this_mu) * (1.0 / temperature)));
+            eigs_[i] * 1.0 /
+            (1.0 + exp((eigs_[i] - this_mu) * (1.0 / temperature)));
     }
     return q_energy;
 }
@@ -217,10 +216,14 @@ int main(int argc, char *argv[])
     phi.resize(1, ns);
     rng.set_seed(prm.seed);
 
+    SiSj.resize(ns, ns);
+
     // TB Part
     makeTB();
 
     cout << "Populated TB matrix." << endl;
+
+    measure_counter = 0;
 
     // Initially fill theta with random values
     for (int i = 0; i < prm.Lx; i++)
@@ -246,81 +249,116 @@ int main(int argc, char *argv[])
 
     temperature = prm.T;
     double totalQE;
-    while (temperature > 0.01)
+    // cout << "Stopping T = " << prm.T_stop << endl;
+    double epsilon = pow(10, -6);
+
+    if (prm.TCA == 0)
     {
-        totalQE = 0;
-        for (int t = 0; t < prm.sweeps; t++)
+        cout << "Performing ED" << endl;
+        while (temperature >= prm.T_stop - epsilon)
         {
-            total_change = 0;
-            accepted = 0;
-            // cout << "Sweep number: " << t + 1 << endl;
-            for (int i = 0; i < prm.Lx; i++)
+            totalQE = 0;
+            for (int t = 0; t < prm.sweeps; t++)
             {
-                for (int j = 0; j < prm.Ly; j++)
+                total_change = 0;
+                accepted = 0;
+                // cout << "Sweep number: " << t + 1 << endl;
+                for (int i = 0; i < prm.Lx; i++)
                 {
-                    // cout << "Sweep: " << t + 1
-                    //      << " (" << i + 1 << ", " << j + 1 << ")\n";
-                    double theta_old, theta_new, P_old, P_new, P_ratio, r;
-                    int pos;
-                    pos = k(i, j);
-
-                    theta_old = real(theta(0, pos));
-                    makeTB();
-                    makeHund();
-
-                    // cout << "***************************" << endl;
-                    // H.print();
-                    // cout << "***************************" << endl;
-
-                    Diagonalize('V', H, eigs_);
-                    // cout << getmu() << " ";
-                    P_old = lnP(pos);
-
-                    theta_new = filter(theta_old + perturb());
-                    theta(0, pos) = theta_new;
-                    makeTB();
-                    makeHund();
-                    Diagonalize('V', H, eigs_);
-                    // cout << getmu() << "\n";
-                    P_new = lnP(pos);
-
-                    r = rng.random();
-                    P_ratio = exp(P_new - P_old);
-                    // cout << r << " " << P_old << " " << P_new << " "
-                    // << exp(P_old) << " " << exp(P_new) << endl;
-                    if (r < P_ratio)
+                    for (int j = 0; j < prm.Ly; j++)
                     {
-                        accepted += 1;
+                        // cout << "Sweep: " << t + 1
+                        //      << " (" << i + 1 << ", " << j + 1 << ")\n";
+                        double theta_old, theta_new, P_old, P_new, P_ratio, r;
+                        int pos;
+                        pos = k(i, j);
+
+                        theta_old = real(theta(0, pos));
+                        makeTB();
+                        makeHund();
+
+                        // cout << "***************************" << endl;
+                        // H.print();
+                        // cout << "***************************" << endl;
+
+                        Diagonalize('V', H, eigs_);
+                        // cout << getmu() << " ";
+                        P_old = lnP(pos);
+
+                        theta_new = filter(theta_old + perturb());
                         theta(0, pos) = theta_new;
-                        // cout << "Accepted" << endl;
+                        makeTB();
+                        makeHund();
+                        Diagonalize('V', H, eigs_);
+                        // cout << getmu() << "\n";
+                        P_new = lnP(pos);
+
+                        r = rng.random();
+                        P_ratio = exp(P_new - P_old);
+                        // cout << r << " " << P_old << " " << P_new << " "
+                        // << exp(P_old) << " " << exp(P_new) << endl;
+                        if (r < P_ratio)
+                        {
+                            accepted += 1;
+                            theta(0, pos) = theta_new;
+                            // cout << "Accepted" << endl;
+                        }
+                        else
+                        {
+                            // cout << "Rejected" << endl;
+                            theta(0, pos) = theta_old;
+                        }
+                        total_change += 1;
                     }
-                    else
+                }
+                double presentQE = getQuantumEnergy();
+                totalQE += presentQE;
+                cout << "T: " << temperature << ", SN: " << t + 1 << ", AR: "
+                     << (accepted * 1.0) / (total_change * 1.0) << ", En: "
+                     << presentQE << ", mu: " << getmu() << endl;
+
+                // Do measurements if thermalized
+                if (abs(double(temperature - prm.T_stop)) < pow(10, -4))
+                {
+                    if ((t + 1) >= prm.measure_after &&
+                        (t - int(prm.measure_after) + 1) %
+                                int(prm.measure_every) ==
+                            0)
                     {
-                        // cout << "Rejected" << endl;
-                        theta(0, pos) = theta_old;
+                        // Measurements here
+                        measure_counter += 1.0;
+                        cout << "Measuring Si.Sj" << endl;
+                        for (int i = 0; i < ns; i++)
+                        {
+                            for (int j = 0; j < ns; j++)
+                            {
+                                theta1 = real(theta(0, i));
+                                theta2 = real(theta(0, j));
+                                SiSj(i, j) += cos(theta1 - theta2);
+                            }
+                        }
                     }
-                    total_change += 1;
                 }
             }
-            double presentQE = getQuantumEnergy();
-            totalQE += presentQE;
-            cout << "T: " << temperature << ", SN: " << t + 1 << ", AR: "
-                 << (accepted * 1.0) / (total_change * 1.0) << ", En: "
-                 << presentQE << ", mu: " << getmu() << endl;
+            tvsE << temperature << "\t" << totalQE / (1.0 * prm.sweeps) << endl;
+
+            if (temperature > 2.0)
+            {
+                temperature -= 0.5;
+            }
+            if (temperature > 0.5 && temperature <= 2.0)
+            {
+                temperature -= 0.1;
+            }
+            if (temperature <= 0.5)
+            {
+                temperature -= 0.01;
+            }
         }
-        tvsE << temperature << "\t" << totalQE / (1.0 * prm.sweeps) << endl;
-        if (temperature > 2.0)
-        {
-            temperature -= 0.5;
-        }
-        if (temperature > 0.5 && temperature <= 2.0)
-        {
-            temperature -= 0.1;
-        }
-        if (temperature > 0.01 && temperature <= 0.5)
-        {
-            temperature -= 0.01;
-        }
+    }
+    else
+    {
+        cout << "Performing TCA" << endl;
     }
 
     // Printing the final angles
@@ -338,26 +376,27 @@ int main(int argc, char *argv[])
     }
     tvsE.close();
 
-    // Si.Sj calculation
-    SiSj.resize(ns, ns);
-    double theta1, theta2;
+    ofstream Srplot;
+    Srplot.open("data/Sr_vs_r.txt");
+    // Average out by diving SiSj
+    cout << "Times measured = " << measure_counter << endl;
     for (int i = 0; i < ns; i++)
     {
-        // cout << "(" << kinv(i).first << ", " << kinv(i).second << ")" <<endl;
         for (int j = 0; j < ns; j++)
         {
-            theta1 = real(theta(0, i));
-            theta2 = real(theta(0, j));
-            SiSj(i, j) = cos(theta1 - theta2);
-            // cout << real(SiSj(i, j)) << "\t";
+            // theta1 = real(theta(0, i));
+            // theta2 = real(theta(0, j));
+            SiSj(i, j) = SiSj(i, j) / measure_counter;
+            Srplot << i << "\t" << j << "\t"
+                   << real(SiSj(i, j)) << "\t" << imag(SiSj(i, j)) << endl;
         }
-        // cout << endl;
+        Srplot << endl;
     }
+    Srplot.close();
 
-    Matrix<cd> Sq;
     Sq.resize(prm.Lx, prm.Ly);
 
-    cout << ":::::::::::S(q):::::::::::" << endl;
+    // cout << ":::::::::::S(q):::::::::::" << endl;
 
     double qx, qy, ix, iy, jx, jy;
 
@@ -391,9 +430,10 @@ int main(int argc, char *argv[])
             sqplot << qx << "\t" << qy << "\t" << real(Sq(qnx, qny))
                    << "\t" << imag(Sq(qnx, qny)) << endl;
         }
-        cout << endl;
+        // cout << endl;
         sqplot << endl;
     }
+
     sqplot.close();
     return 0;
 }
