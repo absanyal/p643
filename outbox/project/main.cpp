@@ -27,10 +27,10 @@ double temperature;
 double measure_counter;
 double theta1, theta2;
 
-Matrix<cd> H;
+Matrix<cd> H, H_cluster;
 Matrix<cd> theta;
 Matrix<cd> phi;
-vector<double> eigs_;
+vector<double> eigs_, eigs_cluster_;
 Matrix<cd> SiSj;
 Matrix<cd> Sq;
 
@@ -48,6 +48,18 @@ pair<int, int> kinv(int M)
 int k(int x, int y)
 {
     return y + prm.Ly * x;
+}
+
+pair<int, int> kinv_cluster(int M)
+{
+    int x = (int)M / prm.c_Ly;
+    int y = M % prm.Ly;
+    return std::make_pair(x, y);
+}
+
+int k_cluster(int x, int y)
+{
+    return y + prm.c_Ly * x;
 }
 
 double getmu()
@@ -68,6 +80,54 @@ double getmu()
         {
             n1 +=
                 double(1.0 / (exp((eigs_[j] - mutemp) *
+                                  (1.0 / temperature)) +
+                              1.0));
+        }
+        if (abs(target_N - n1) < double(0.00001))
+        {
+            converged = true;
+            break;
+        }
+        else
+        {
+            if (n1 < target_N)
+            {
+                mu1 = mutemp;
+                mutemp = 0.5 * (mutemp + mu2);
+            }
+            else
+            {
+                mu2 = mutemp;
+                mutemp = 0.5 * (mutemp + mu1);
+            }
+        }
+    }
+    if (!converged)
+    {
+        cout << "mu not converged, stopping at N= " << n1 << endl;
+    }
+    global_present_mu = mutemp;
+    return mutemp;
+}
+
+double getmu_cluster()
+{
+    double target_N, n1;
+    double mu1, mu2, mutemp, muout;
+    bool converged;
+    int nstates = int(2.0 * prm.c_Lx * prm.c_Ly);
+    target_N = prm.filling * 2.0 * prm.c_Lx * prm.c_Ly;
+    mu1 = eigs_cluster_[0];
+    mu2 = eigs_cluster_[nstates - 1];
+    mutemp = (eigs_cluster_[0] + eigs_cluster_[nstates - 1]) / 2.0;
+    // mutemp = global_present_mu;
+    for (int i = 0; i < 40000; i++)
+    {
+        n1 = 0.0;
+        for (int j = 0; j < nstates; j++)
+        {
+            n1 +=
+                double(1.0 / (exp((eigs_cluster_[j] - mutemp) *
                                   (1.0 / temperature)) +
                               1.0));
         }
